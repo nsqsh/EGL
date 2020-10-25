@@ -1,0 +1,19 @@
+body {
+    margin: 0;
+}
+
+canvas {
+    position: absolute;
+    background-color: black;
+}
+
+#debug {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background-color: transparent;
+    color: white;
+    font-size: large;
+    font-family: "Source Han Code JP";
+    z-index: 99;
+}
