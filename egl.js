@@ -101,7 +101,6 @@ function initctx() {
     const cvs = document.getElementsByTagName("canvas")
     for (n = 0; n < LAYERLEN; n++) {
         ctx[n] = cvs[n].getContext("2d")
-        ctx[n].canvas.style.visibility = "hidden"
         ctx[n].complete = true
         ctx[n].timestamp = 0
     }
@@ -124,7 +123,6 @@ function changeoption() {
     J = Math.ceil(W/d)
     N = W*H*4
     period = document.getElementById("period").value
-    console.log(111111111)
 }
 
 // 画像コンテナの初期化
