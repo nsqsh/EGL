@@ -1,10 +1,19 @@
 <html>
     <head>
-        <script src="egl.js" async></script>
+        <script src="egl.js" defer></script>
         <link rel="stylesheet", href="style.css">
     </head>
     <body>
-        <div id="debug"></div>
+        <header>
+            <input type="submit" value="スタート" style="display: none;">
+            <input type="submit" value="ストップ" style="display: none;">
+            <input type="submit" value="初期化" style="display: none;">
+            <label>描画周期 (ms)：</label>
+            <input type="text" class="number" value=500 id="period">
+            <label style="display: none;">セルのサイズ (pix)：</label>
+            <input type="text" class="number" value=4 id="d" style="display: none;">
+            <input type="submit" value="適用" onclick="changeoption()">
+        </header>
         <canvas></canvas>
         <canvas></canvas>
     </body>

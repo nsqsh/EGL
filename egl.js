@@ -5,7 +5,7 @@ const LAYERLEN = 2
 // 初期密度
 const density = 0.1
 // セルの型
-const Cell = Uint8Array
+const Cell = Int8Array
 // セルの長さ
 const CELLLEN = 4
 // 無効な遺伝子の下限
@@ -40,9 +40,10 @@ var dw = 0; var dh = 0;
 // d: セル1辺の長さ  N: 画像データ長
 // H: キャンバスサイズ縦  W: キャンバスサイズ横
 // I: 縦セル数  J: 横セル数
-var d = 1; var N = 0
+var d = document.getElementById("d").value
 var H = 0; var W = 0
 var I = 0; var J = 0
+var N = 0
 
 // レイヤー配列
 const ctx = new Array(LAYERLEN)
@@ -80,6 +81,7 @@ window.onload = ()=>{
     initialize()
 }
 
+
 // 初期化関数
 // Canvasの取得～初期フィールドの表示
 function initialize() {
@@ -94,12 +96,6 @@ function initialize() {
 
 }
 
-// click = 1
-// onclick = ()=>{
-//     start(click%2, (click-1)%2)
-//     click++
-// }
-
 // Canvasの取得
 function initctx() {
     const cvs = document.getElementsByTagName("canvas")
@@ -113,17 +109,22 @@ function initctx() {
 
 // サイズの取得
 function initsize() {
-    d = d
+    changeoption()
+    for (n = 0; n < LAYERLEN; n++) {
+        ctx[n].canvas.width = W
+        ctx[n].canvas.height = H
+    }
+}
+
+function changeoption() {
+    d = document.getElementById("d").value
     W = window.innerWidth
     H = window.innerHeight
     I = Math.ceil(H/d)
     J = Math.ceil(W/d)
     N = W*H*4
-
-    for (n = 0; n < LAYERLEN; n++) {
-        ctx[n].canvas.width = W
-        ctx[n].canvas.height = H
-    }
+    period = document.getElementById("period").value
+    console.log(111111111)
 }
 
 // 画像コンテナの初期化
@@ -166,8 +167,7 @@ function convertfield(layer) {
             cell = field[layer][i][j]
             rgb = rgbcache[cell]
             color = rgb ? rgb : cell2color() 
-            h = i*d; w = j*d
-            n = (W*h + w)*4
+            n = (W*i + j)*4
             img[layer].data[n] = color[0]
             img[layer].data[n+1] = color[1]
             img[layer].data[n+2] = color[2]

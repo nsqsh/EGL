@@ -5,15 +5,37 @@ body {
 canvas {
     position: absolute;
     background-color: black;
-}
-
-#debug {
+    top: 0;
+    left: 0;
+    z-index: 2;
     width: 100%;
     height: 100%;
+}
+
+header {
     position: absolute;
-    background-color: transparent;
-    color: white;
-    font-size: large;
-    font-family: "Source Han Code JP";
+    height: auto;
+    width: 100%;
+    top: 0;
     z-index: 99;
+    background-color: #404040;
+    mix-blend-mode: screen;
+    color: white;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    text-align: right;
+}
+
+header input.number {
+    width: 50px;
+    margin-left: 0.2em;
+}
+
+header label {
+    margin-left: 1em;
+}
+
+header input {
+    margin-left: 0.5em;
+    margin-right: 0.5em;
 }
