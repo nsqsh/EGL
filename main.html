@@ -9,9 +9,11 @@
             <input type="submit" value="ストップ" style="display: none;">
             <input type="submit" value="初期化" style="display: none;">
             <label>描画周期 (ms)：</label>
-            <input type="text" class="number" value=500 id="period">
+            <input type="text" class="number" value=100 id="period">
             <label style="display: none;">セルのサイズ (pix)：</label>
             <input type="text" class="number" value=4 id="d" style="display: none;">
+            <label>突然変異率 (%/gene)：</label>
+            <input type="text" class="number" value=0.0001 id="mutation">
             <input type="submit" value="適用" onclick="changeoption()">
         </header>
         <canvas></canvas>

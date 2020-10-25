@@ -69,9 +69,14 @@ var alivenext = false
 var parent = new Cell(adam)
 // 子セル用一時変数
 var child = new Cell(adam)
+// 乱数用一時変数
+var rnd = 0
 
 // 描画間隔 (msec)
 var period = 1000
+
+// 突然変異率 (per gene)
+var mutationrate = 0
 
 
 /*- 関数 -----------------------------------------------*/
@@ -92,7 +97,9 @@ function initialize() {
     convertfield(1)
     draw(1)
     display(1, 0)
-    start(0, 1); start(1, 0)
+    
+    start(0, 1)
+    start(1, 0)
 
 }
 
@@ -123,6 +130,7 @@ function changeoption() {
     J = Math.ceil(W/d)
     N = W*H*4
     period = document.getElementById("period").value
+    mutationrate = document.getElementById("mutation").value/100
 }
 
 // 画像コンテナの初期化
@@ -323,39 +331,43 @@ function getneighbor(layer, i, j) {
 
 function breed() {
     for (n = 0; n < CELLLEN; n++) {
-        parent = neighbors[(Math.random()*neibcount)|0]
+        rnd = Math.random()
+        parent = neighbors[(rnd*neibcount)|0]
         child[n] = parent[n]
+        rnd = (rnd*100)%1
+        if (rnd < mutationrate) {
+            child[n] = (Math.random()*9)|0
+        }
     }
 }
 
 
 
 function start(layer, behind) {
-    if (field[layer].used && field[layer].converted) {
+
+    if (!ctx[layer].complete
+    && (ctx[layer].timestamp < ctx[behind].timestamp)
+    && (performance.now() - ctx[behind].timestamp > period)) {
+        console.time(`layer${layer}: display`)
+        display(layer, behind)
+        console.timeEnd(`layer${layer}: display`)
+        console.log(`t${layer} - t${behind} = ${(ctx[layer].timestamp - ctx[behind].timestamp)|0}ms`)
+
+    } else if (!img[layer].drawn && ctx[layer].complete) {
+        console.time(`layer${layer}: draw`)
+        draw(layer)
+        console.timeEnd(`layer${layer}: draw`)
+
+    } else if (!field[layer].converted && img[layer].drawn) {
+        console.time(`layer${layer}: convertfield`)
+        convertfield(layer)
+        console.timeEnd(`layer${layer}: convertfield`)
+
+    } else if (field[layer].used && field[layer].converted) {
         console.time(`layer${layer}: nextfield`)
         nextfield(layer, behind)
         console.timeEnd(`layer${layer}: nextfield`)
     }
-    
-    if (!field[layer].converted && img[layer].drawn) {
-        console.time(`layer${layer}: convertfield`)
-        convertfield(layer)
-        console.timeEnd(`layer${layer}: convertfield`)
-    }
-    
-    if (!img[layer].drawn && ctx[layer].complete) {
-        console.time(`layer${layer}: draw`)
-        draw(layer)
-        console.timeEnd(`layer${layer}: draw`)
-    }
 
-    if (!ctx[layer].complete
-        && (ctx[layer].timestamp < ctx[behind].timestamp)
-        && (performance.now() - ctx[behind].timestamp > period)) {
-            console.time(`layer${layer}: display`)
-            display(layer, behind)
-            console.timeEnd(`layer${layer}: display`)
-        }
-
-    setTimeout(start, 1, layer, behind)
+    setTimeout(start, 0, layer, behind)
 }
