@@ -120,7 +120,7 @@ function createpoints(scale) {
     const d = scale.d
     const WH = [scale.W, scale.H]
 
-    const points = new Float32Array(I*J*2).fill(0)
+    const points = new Float32Array(I*J*2).fill(NaN)
     
     let n = 0
     for (let i = 0; i < I; i++) {
@@ -131,7 +131,7 @@ function createpoints(scale) {
         n += 2
     }}
 
-    return points
+    return points.filter(elm=>!isNaN(elm))
 }
 
 function ij2wh(ij, d) {
