@@ -1,373 +1,156 @@
-/*- 定数 -----------------------------------------------*/
-// レイヤー枚数
-const LAYERLEN = 2
+window.onload = main
 
-// 初期密度
-const density = 0.1
-// セルの型
-const Cell = Int8Array
-// セルの長さ
-const CELLLEN = 4
-// 無効な遺伝子の下限
-const DEADGENE = 9
-// 初期配置セル
-const adam = new Cell([2, 3, 3, 3])
-
-// セルのインデックス
-// 生存時、近隣の生存セル数 n が
-//     cell[AL] <= n <= cell[AR]
-// ならば次ステップでも生存
-// 死亡時、近隣の生存セル数 n が
-//     cell[BL] <= n <= cell[BR]
-// ならば次ステップで誕生
-const AL = 0; const AR = 1
-const BL = 2; const BR = 3
-
-// セルのRGB色
-const RGB = Uint8Array
-
-
-/*- 変数 -----------------------------------------------*/
-
-// ループ用インデックス
-var i = 0; var j = 0;
-var k = 0; var l = 0;
-var m = 0; var n = 0;
-var w = 0; var h = 0;
-var dw = 0; var dh = 0;
-
-// スケール変数
-// d: セル1辺の長さ  N: 画像データ長
-// H: キャンバスサイズ縦  W: キャンバスサイズ横
-// I: 縦セル数  J: 横セル数
-var d = document.getElementById("d").value
-var H = 0; var W = 0
-var I = 0; var J = 0
-var N = 0
-
-// レイヤー配列
-const ctx = new Array(LAYERLEN)
-// 線形画像データ
-const img = new Array(LAYERLEN)
-// セルから色への変換キャッシュ
-const rgbcache = {}
-// 色用一時変数
-var rgb = new RGB(3).fill(0x00)
-// フィールド配列
-const field = new Array(LAYERLEN)
-// セル用一時変数
-var cell = new Cell(adam)
-// 近隣セル用一時変数
-var neighbors = (new Array(8)).fill([]).map(neib=>new Cell(adam))
-// 近隣セル生存数用一時変数
-var neibcount = 0
-// 前ステップ状態用一時変数
-var aliveprev = false
-// 次ステップ状態用一時変数
-var alivenext = false
-// 親セル用一時変数
-var parent = new Cell(adam)
-// 子セル用一時変数
-var child = new Cell(adam)
-// 乱数用一時変数
-var rnd = 0
-
-// 描画間隔 (msec)
-var period = 1000
-
-// 突然変異率 (per gene)
-var mutationrate = 0
-
-
-/*- 関数 -----------------------------------------------*/
-
-
-window.onload = ()=>{
-    initialize()
+class Scale {
+    constructor(d, canvas) {
+        this.d = d
+        this.H = canvas.clientHeight
+        this.W = canvas.clientWidth
+        this.I = Math.ceil(this.H/d)
+        this.J = Math.ceil(this.W/d)
+        this.N = 2*this.I*this.J
+    }
 }
 
+async function main() {
+    cellsize = 300
 
-// 初期化関数
-// Canvasの取得～初期フィールドの表示
-function initialize() {
-    initctx()
-    initsize()
-    initimg()
-    initfield()
-    convertfield(1)
-    draw(1)
-    display(1, 0)
+    cvs = document.getElementsByTagName("canvas")[0]
+    scale = resize(cellsize, cvs)
+
+    gl = cvs.getContext("webgl2")
+    gl.clearColor(0.0, 0.0, 0.0, 1.0)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+
+    sources = await getsources("test.vert", "test.frag")
+    program = construct_program(gl, sources)
     
-    start(0, 1)
-    start(1, 0)
+    p = createpoints(scale)
 
+    attLocation = gl.getAttribLocation(program, "pos")
+    attStride = 2
+
+    vbo = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.bufferData(gl.ARRAY_BUFFER, p, gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, null)
+
+    // VBOをバインド
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+    // attribute属性を有効にする
+    gl.enableVertexAttribArray(attLocation);
+    // attribute属性を登録
+    gl.vertexAttribPointer(attLocation, attStride, gl.FLOAT, false, 0, 0)
+
+    gl.drawArrays(gl.POINTS, 0, p.length/2);
+    gl.flush();
 }
 
-// Canvasの取得
-function initctx() {
-    const cvs = document.getElementsByTagName("canvas")
-    for (n = 0; n < LAYERLEN; n++) {
-        ctx[n] = cvs[n].getContext("2d")
-        ctx[n].complete = true
-        ctx[n].timestamp = 0
-    }
+
+
+
+
+
+
+
+
+
+
+
+function resize(d, canvas) {
+    canvas.height = canvas.clientHeight
+    canvas.width = canvas.clientWidth
+    return new Scale(d, canvas)
 }
 
-// サイズの取得
-function initsize() {
-    changeoption()
-    for (n = 0; n < LAYERLEN; n++) {
-        ctx[n].canvas.width = W
-        ctx[n].canvas.height = H
-    }
-}
-
-function changeoption() {
-    d = document.getElementById("d").value
-    W = window.innerWidth
-    H = window.innerHeight
-    I = Math.ceil(H/d)
-    J = Math.ceil(W/d)
-    N = W*H*4
-    period = document.getElementById("period").value
-    mutationrate = document.getElementById("mutation").value/100
-}
-
-// 画像コンテナの初期化
-function initimg() {
-    for (m = 0; m < LAYERLEN; m++) {
-        img[m] = ctx[m].getImageData(0, 0, W, H)
-        for (n = 3; n < N; n += 4) {
-            img[m].data[n] = 0xFF
+async function getsources(vert_filename, frag_filename) {
+    
+    vertpromise = new Promise(function(resolve){
+        const xhr = new XMLHttpRequest()
+        xhr.open("GET", vert_filename)
+        xhr.send()
+        xhr.onload = function(){
+            resolve(xhr.responseText)
         }
-        img[m].drawn = true
-    }
-}
+    })
 
-// フィールドの初期化
-function initfield() {
-    for (n = 0; n < LAYERLEN; n++) {
-        field[n] = new Array(I)
-        for (i = 0; i < I; i++) {
-            field[n][i] = new Array(J)
-            for (j = 0; j < J; j++) {
-                if (Math.random() < density) {
-                    field[n][i][j] = new Cell(adam)
-                } else {
-                    field[n][i][j] = new Cell(CELLLEN).fill(DEADGENE)
-                }
-            }
+    fragpromise = new Promise(function(resolve){
+        const xhr = new XMLHttpRequest()
+        xhr.open("GET", frag_filename)
+        xhr.send()
+        xhr.onload = function(){
+            resolve(xhr.responseText)
         }
-        field[n].used = true
-        field[n].converted = true
-    }
-    field[1].converted = false
-    field[1].used = false
+    })
+
+    return Promise.all([vertpromise, fragpromise])
 }
 
-// フィールドを画像データに変換
-function convertfield(layer) {
-    if (d === 1) {
-        for (i = 0; i < I; i++) {
-        for (j = 0; j < J; j++) {
-            cell = field[layer][i][j]
-            rgb = rgbcache[cell]
-            color = rgb ? rgb : cell2color() 
-            n = (W*i + j)*4
-            img[layer].data[n] = color[0]
-            img[layer].data[n+1] = color[1]
-            img[layer].data[n+2] = color[2]
-        }}
-    } else {
-        for (i = 0; i < I; i++) {
-        for (j = 0; j < J; j++) {
-            cell = field[layer][i][j]
-            rgb = rgbcache[cell]
-            color = rgb ? rgb : cell2color() 
-            h = i*d; w = j*d
-            for (dh = 0; (dh < d)&&(h + dh < H); dh++) {
-            for (dw = 0; (dw < d)&&(w + dw < W); dw++) {
-                n = (W*(h + dh) + (w + dw))*4
-                img[layer].data[n] = color[0]
-                img[layer].data[n+1] = color[1]
-                img[layer].data[n+2] = color[2]
-            }}
-        }}
-    }
-    field[layer].converted = true
-    img[layer].drawn = false
+function construct_program(gl, sources) {
+    const shaders = [
+        gl.createShader(gl.VERTEX_SHADER), 
+        gl.createShader(gl.FRAGMENT_SHADER)]
+
+    const program = gl.createProgram()
+    
+    sources.forEach((code, i)=>{
+        gl.shaderSource(shaders[i], code)
+        gl.compileShader(shaders[i])
+        
+        // debug
+        console.assert(gl.getShaderParameter(shaders[i], gl.COMPILE_STATUS))
+        let log = gl.getShaderInfoLog(shaders[i])
+        if (log) console.warn(log)
+
+        gl.attachShader(program, shaders[i])
+    })
+    gl.linkProgram(program)
+
+    // debug
+    console.assert(gl.getProgramParameter(program, gl.LINK_STATUS))
+    let log = gl.getProgramInfoLog(program)
+    if (log) console.warn(log)
+
+    gl.useProgram(program);
+
+    return program
 }
 
-function draw(layer) {
-    ctx[layer].putImageData(img[layer], 0, 0)
-    img[layer].drawn = true
-    ctx[layer].complete = false
-}
+function createpoints(scale) {
+    const I = scale.I; const J = scale.J
+    const d = scale.d
+    const WH = [scale.W, scale.H]
 
-
-
-function cell2color() {
-    if (!isalive(cell)) {
-        rgbcache[cell] = new RGB([0,0,0])
-    } else {
-        const range = (cell[AR] - cell[AL]) + (cell[BR] - cell[BL])
-        const center = (cell[AL] + cell[AR] + cell[BL] + cell[BR])
-        const h = (center/32)*270
-        const l = 0.05+0.95*(range/16)
-        const rgb = hsl2rgb(h, 1, l)
-        rgbcache[cell] = rgb
-    }
-    return rgbcache[cell]
-}
-
-function isalive(cell) {
-    return (cell[0] < DEADGENE)
-}
-
-function hsl2rgb(hue, sat, lum) {
-    let r = 0x00; let g = 0x00; let b = 0x00
-
-    const max = lum + sat*(0.5 - Math.abs(lum - 0.5))
-    const min = lum - sat*(0.5 - Math.abs(lum - 0.5))
-    const diff_div60 = (max - min)/60
-    if ((0 <= hue) && (hue < 60)) {
-        r = max
-        g = min+diff_div60*hue
-        b = min        
-    } else if ((60 <= hue) && (hue < 120)) {
-        r = min+diff_div60*(120-hue)
-        g = max
-        b = min
-    } else if ((120 <= hue) && (hue < 180)) {
-        r = min
-        g = max
-        b = min+diff_div60*(hue-120)
-    } else if ((180 <= hue) && (hue < 240)) {
-        r = min
-        g = min+diff_div60*(240-hue)
-        b = max
-    } else if ((240 <= hue) && (hue < 300)) {
-        r = min+diff_div60*(hue-240)
-        g = min
-        b = max
-    } else if ((300 <= hue) && (hue < 360)) {
-        r = max
-        g = min
-        b = min + diff_div60*(360-H)
-    }
-    const rgbfloat = [r, g, b]
-    return new RGB(rgbfloat.map(elm => (elm*255)|0))
-}
-
-// レイヤーを表示
-function display(layer, hidden) {
-    ctx[layer].canvas.style.visibility = "visible"
-    ctx[hidden].canvas.style.visibility = "hidden"
-    ctx[layer].timestamp = performance.now()
-    ctx[hidden].complete = true
-}
-
-function nextfield(next, prev) {
+    const points = new Float32Array(I*J*2).fill(0)
+    
+    let n = 0
     for (let i = 0; i < I; i++) {
     for (let j = 0; j < J; j++) {
-        cell = field[prev][i][j]
-        getneighbor(prev, i, j)
-        aliveprev = isalive(cell)
-        if (aliveprev) {
-            alivenext
-                = (cell[AL] <= neibcount) && (neibcount <= cell[AR])
-            if (alivenext) {
-                field[next][i][j][0] = cell[0]
-                field[next][i][j][1] = cell[1]
-                field[next][i][j][2] = cell[2]
-                field[next][i][j][3] = cell[3]
-            } else {
-                field[next][i][j][0] = DEADGENE
-            }
-        } else {
-            if (neibcount > 0) {
-                breed()
-                alivenext
-                    = (child[BL] <= neibcount) && (neibcount <= child[BR])
-                if (alivenext) {
-                    field[next][i][j][0] = child[0]
-                    field[next][i][j][1] = child[1]
-                    field[next][i][j][2] = child[2]
-                    field[next][i][j][3] = child[3]
-                } else {
-                    field[next][i][j][0] = DEADGENE
-                }
-            } else {
-                field[next][i][j][0] = DEADGENE
-            }
-
-        }
+        const xy = wh2xy(ij2wh([i,j], d), WH)
+        points[n] = xy[0]
+        points[n+1] = xy[1]
+        n += 2
     }}
-    field[prev].used = true
-    field[next].used = false
-    field[next].converted = false
+
+    return points
 }
 
-function getneighbor(layer, i, j) {
-    neibcount = 0
-    for (k = i-1; k <= i+1; k++) {
-
-        if ((k < 0) || (I <= k)) continue
-        for (l = j-1; l <= j+1; l++) {
-
-            if ((l < 0) || (J <= l)) continue
-            if ((k===i) && (l===j)) continue
-            if (!isalive(field[layer][k][l])) continue
-
-            neighbors[neibcount][0] = field[layer][k][l][0]
-            neighbors[neibcount][1] = field[layer][k][l][1]
-            neighbors[neibcount][2] = field[layer][k][l][2]
-            neighbors[neibcount][3] = field[layer][k][l][3]
-
-            neibcount++
-        }
-    }
+function ij2wh(ij, d) {
+    return [
+        (ij[1]+0.5)*d,
+        (ij[0]+0.5)*d
+    ]
 }
 
-function breed() {
-    for (n = 0; n < CELLLEN; n++) {
-        rnd = Math.random()
-        parent = neighbors[(rnd*neibcount)|0]
-        child[n] = parent[n]
-        rnd = (rnd*100)%1
-        if (rnd < mutationrate) {
-            child[n] = (Math.random()*9)|0
-        }
-    }
+function wh2xy(wh, WH) {
+    return [
+        2*wh[0]/WH[0] - 1,
+        1 - 2*wh[1]/WH[1]
+    ]
 }
 
 
-
-function start(layer, behind) {
-
-    if (!ctx[layer].complete
-    && (ctx[layer].timestamp < ctx[behind].timestamp)
-    && (performance.now() - ctx[behind].timestamp > period)) {
-        console.time(`layer${layer}: display`)
-        display(layer, behind)
-        console.timeEnd(`layer${layer}: display`)
-        console.log(`t${layer} - t${behind} = ${(ctx[layer].timestamp - ctx[behind].timestamp)|0}ms`)
-
-    } else if (!img[layer].drawn && ctx[layer].complete) {
-        console.time(`layer${layer}: draw`)
-        draw(layer)
-        console.timeEnd(`layer${layer}: draw`)
-
-    } else if (!field[layer].converted && img[layer].drawn) {
-        console.time(`layer${layer}: convertfield`)
-        convertfield(layer)
-        console.timeEnd(`layer${layer}: convertfield`)
-
-    } else if (field[layer].used && field[layer].converted) {
-        console.time(`layer${layer}: nextfield`)
-        nextfield(layer, behind)
-        console.timeEnd(`layer${layer}: nextfield`)
-    }
-
-    setTimeout(start, 0, layer, behind)
+function randfield(scale) {
+    const f = new Int32Array(scale.N).fill(0x00)
+    return f.map(elm => (Math.random()*513 - 1)|0)
 }
+
