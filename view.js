@@ -30,7 +30,7 @@ async function main() {
     program = construct_program(gl, sources)
     
     points = createpoints(scale)
-    f = randfield(scale)
+    f = initfield(scale, 0.3)
     
     const points_buff = create_attrbuffer(gl, program, "pos", 2, gl.FLOAT, gl.ARRAY_BUFFER)
     set_attrbuffer(gl, points_buff, points, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
@@ -142,7 +142,6 @@ function create_attrbuffer(gl, program, varname, buff_elmlength, buff_elmtype, b
     const location = gl.getAttribLocation(program, varname)
 
     gl.bindBuffer(buff_target, buffer)
-    console.log(location)
     gl.enableVertexAttribArray(location)
     if (float_enums.includes(buff_elmtype)) {
         gl.vertexAttribPointer(location, buff_elmlength, buff_elmtype, false, 0, 0)
