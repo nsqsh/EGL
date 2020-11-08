@@ -12,44 +12,28 @@ class Scale {
 }
 
 async function main() {
-    cellsize = 300
+    const cellsize = 300
 
-    cvs = document.getElementsByTagName("canvas")[0]
-    scale = resize(cellsize, cvs)
+    const cvs = document.getElementsByTagName("canvas")[0]
+    const scale = resize(cellsize, cvs)
 
-    gl = cvs.getContext("webgl2")
+    const gl = cvs.getContext("webgl2")
     gl.clearColor(0.0, 0.0, 0.0, 1.0)
     gl.clear(gl.COLOR_BUFFER_BIT)
 
-    sources = await getsources("test.vert", "test.frag")
-    program = construct_program(gl, sources)
+    const sources = await getsources("test.vert", "test.frag")
+    const program = construct_program(gl, sources)
     
-    p = createpoints(scale)
+    const points = createpoints(scale)
+    
+    const points_buff = construct_buffer(gl, program, "pos", 2, gl.FLOAT, gl.ARRAY_BUFFER)
+    setvalue_buffer(gl, points_buff, points, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
 
-    attLocation = gl.getAttribLocation(program, "pos")
-    attStride = 2
 
-    vbo = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
-    gl.bufferData(gl.ARRAY_BUFFER, p, gl.STATIC_DRAW)
-    gl.bindBuffer(gl.ARRAY_BUFFER, null)
-
-    // VBOをバインド
-    gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-    // attribute属性を有効にする
-    gl.enableVertexAttribArray(attLocation);
-    // attribute属性を登録
-    gl.vertexAttribPointer(attLocation, attStride, gl.FLOAT, false, 0, 0)
-
-    gl.drawArrays(gl.POINTS, 0, p.length/2);
+    gl.drawArrays(gl.POINTS, 0, points.length/2);
     gl.flush();
+
 }
-
-
-
-
-
-
 
 
 
@@ -63,26 +47,13 @@ function resize(d, canvas) {
 }
 
 async function getsources(vert_filename, frag_filename) {
-    
-    vertpromise = new Promise(function(resolve){
-        const xhr = new XMLHttpRequest()
-        xhr.open("GET", vert_filename)
-        xhr.send()
-        xhr.onload = function(){
-            resolve(xhr.responseText)
-        }
-    })
+    const filenames = [vert_filename, frag_filename]
+    const requests = filenames.map(filename=>fetch(filename))
+    const texts = requests.map(
+        request => request.then(
+            response => response.text()))
 
-    fragpromise = new Promise(function(resolve){
-        const xhr = new XMLHttpRequest()
-        xhr.open("GET", frag_filename)
-        xhr.send()
-        xhr.onload = function(){
-            resolve(xhr.responseText)
-        }
-    })
-
-    return Promise.all([vertpromise, fragpromise])
+    return Promise.all(texts)
 }
 
 function construct_program(gl, sources) {
@@ -147,6 +118,26 @@ function wh2xy(wh, WH) {
         1 - 2*wh[1]/WH[1]
     ]
 }
+
+
+function construct_buffer(gl, program, varname, buff_elmlength, buff_elmtype, buff_target) {
+    const buffer = gl.createBuffer()
+    const location = gl.getAttribLocation(program, varname)
+
+    gl.bindBuffer(buff_target, buffer)
+    gl.enableVertexAttribArray(location)
+    gl.vertexAttribPointer(location, buff_elmlength, buff_elmtype, false, 0, 0)
+    gl.bindBuffer(buff_target, null)
+
+    return buffer
+}
+
+function setvalue_buffer(gl, buffer, values, usage, buff_target) {
+    gl.bindBuffer(buff_target, buffer)
+    gl.bufferData(buff_target, values, usage)
+    gl.bindBuffer(buff_target, null)
+}
+
 
 
 function randfield(scale) {
