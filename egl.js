@@ -14,6 +14,7 @@ class Scale {
 }
 
 async function main() {
+
     const cellsize = 10
 
     const cvs = document.getElementsByTagName("canvas")[0]
@@ -22,8 +23,7 @@ async function main() {
     gl = cvs.getContext("webgl2")
     gl.clearColor(0.0, 0.0, 0.0, 1.0)
     gl.clear(gl.COLOR_BUFFER_BIT)
-
-
+    
     const sources = await getsources("pos.vert", "color.frag")
     program = construct_program(gl, sources)
     
@@ -32,7 +32,7 @@ async function main() {
     const points_buff = create_attrbuffer(gl, program, "pos", 2, gl.FLOAT, gl.ARRAY_BUFFER)
     set_attrbuffer(gl, points_buff, points, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
 
-    border = (cellsize/20)
+    border = Math.min(cellsize/50, 3)
     const ulocation = gl.getUniformLocation(program, "cellsize")
     gl.uniform1f(ulocation, cellsize - border)
 
@@ -57,11 +57,13 @@ function resize(d, canvas) {
 async function getsources(vert_filename, frag_filename) {
     const filenames = [vert_filename, frag_filename]
     const requests = filenames.map(filename=>fetch(filename))
+    
     const texts = requests.map(
-        request => request.then(
-            response => response.text()))
+        request => (request.then(
+            response => response.text())));
 
-    return Promise.all(texts)
+    return Promise.all(texts).catch(
+        err => [vshadertext, fshadertext])
 }
 
 function construct_program(gl, sources) {
@@ -166,3 +168,12 @@ function randfield(scale) {
     return f.map(elm => (Math.random()*513 - 1)|0)
 }
 
+
+function debug(text, clear=false) {
+    const d = document.getElementById("debug")
+    if (clear) {
+        d.innerText = text
+    } else {
+        d.innerText += ("\n" + text)
+    }
+}
