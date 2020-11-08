@@ -23,7 +23,7 @@ async function main() {
     gl.clearColor(0.0, 0.0, 0.0, 1.0)
     gl.clear(gl.COLOR_BUFFER_BIT)
 
-    const sources = await getsources("test.vert", "test.frag")
+    const sources = await getsources("pos.vert", "color.frag")
     const program = construct_program(gl, sources)
     
     const points = createpoints(scale)
@@ -43,7 +43,7 @@ async function main() {
     gl.flush();
 
 }
-
+ 
 
 
 
