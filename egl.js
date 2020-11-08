@@ -7,12 +7,14 @@ class Scale {
         this.W = canvas.clientWidth
         this.I = Math.ceil(this.H/d)
         this.J = Math.ceil(this.W/d)
+        this.Hrem = d*this.I - this.H
+        this.Wrem = d*this.J - this.W
         this.N = 2*this.I*this.J
     }
 }
 
 async function main() {
-    const cellsize = 300
+    const cellsize = 100
 
     const cvs = document.getElementsByTagName("canvas")[0]
     const scale = resize(cellsize, cvs)
@@ -26,9 +28,16 @@ async function main() {
     
     const points = createpoints(scale)
     
-    const points_buff = construct_buffer(gl, program, "pos", 2, gl.FLOAT, gl.ARRAY_BUFFER)
-    setvalue_buffer(gl, points_buff, points, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
+    const points_buff = create_attrbuffer(gl, program, "pos", 2, gl.FLOAT, gl.ARRAY_BUFFER)
+    set_attrbuffer(gl, points_buff, points, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
 
+    const ulocation = gl.getUniformLocation(program, "cellsize")
+    gl.uniform1f(ulocation, cellsize-1)
+
+    f = randfield(scale)
+
+    // const genes_buff = create_attrbuffer(gl, program, "gene", 2, gl.SHORT, gl.ARRAY_BUFFER)
+    // set_attrbuffer(gl, genes_buff, f, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
 
     gl.drawArrays(gl.POINTS, 0, points.length/2);
     gl.flush();
@@ -90,13 +99,14 @@ function createpoints(scale) {
     const I = scale.I; const J = scale.J
     const d = scale.d
     const WH = [scale.W, scale.H]
+    const WHrem = [scale.Wrem, scale.Hrem]
 
     const points = new Float32Array(I*J*2).fill(NaN)
     
     let n = 0
     for (let i = 0; i < I; i++) {
     for (let j = 0; j < J; j++) {
-        const xy = wh2xy(ij2wh([i,j], d), WH)
+        const xy = wh2xy(ij2wh([i,j], d, WHrem), WH)
         points[n] = xy[0]
         points[n+1] = xy[1]
         n += 2
@@ -105,10 +115,10 @@ function createpoints(scale) {
     return points.filter(elm=>!isNaN(elm))
 }
 
-function ij2wh(ij, d) {
+function ij2wh(ij, d, WHrem) {
     return [
-        (ij[1]+0.5)*d,
-        (ij[0]+0.5)*d
+        (ij[1]+0.5)*d - (WHrem[0]/2)|0,
+        (ij[0]+0.5)*d - (WHrem[1]/2)|0
     ]
 }
 
@@ -120,7 +130,7 @@ function wh2xy(wh, WH) {
 }
 
 
-function construct_buffer(gl, program, varname, buff_elmlength, buff_elmtype, buff_target) {
+function create_attrbuffer(gl, program, varname, buff_elmlength, buff_elmtype, buff_target) {
     const buffer = gl.createBuffer()
     const location = gl.getAttribLocation(program, varname)
 
@@ -132,7 +142,7 @@ function construct_buffer(gl, program, varname, buff_elmlength, buff_elmtype, bu
     return buffer
 }
 
-function setvalue_buffer(gl, buffer, values, usage, buff_target) {
+function set_attrbuffer(gl, buffer, values, usage, buff_target) {
     gl.bindBuffer(buff_target, buffer)
     gl.bufferData(buff_target, values, usage)
     gl.bindBuffer(buff_target, null)
@@ -141,7 +151,7 @@ function setvalue_buffer(gl, buffer, values, usage, buff_target) {
 
 
 function randfield(scale) {
-    const f = new Int32Array(scale.N).fill(0x00)
+    const f = new Int16Array(scale.I*scale.J*2).fill(0x00)
     return f.map(elm => (Math.random()*513 - 1)|0)
 }
 
