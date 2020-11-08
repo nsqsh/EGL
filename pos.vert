@@ -6,12 +6,12 @@
 #define isalive(gene) (gene[0] < 0)
 
 uniform float cellsize;
-in ivec2 gene;
 in vec2 pos;
+in ivec2 vgene;
 out vec4 vcolor;
 
 vec4 gene2color(const in ivec2 gene) {
-    int alive = int(isalive(gene));
+    int alive = int(!isalive(gene));
 
     int codon = 0;
     int mask = 0;
@@ -39,7 +39,7 @@ vec4 gene2color(const in ivec2 gene) {
 
 
 void main() {
-    vcolor = vec4(1.0);
+    vcolor = gene2color(vgene);
     gl_PointSize = cellsize;
     gl_Position = vec4(pos, 0.0, 1.0);
 }

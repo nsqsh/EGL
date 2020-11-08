@@ -14,39 +14,38 @@ class Scale {
 }
 
 async function main() {
-    const cellsize = 100
+    const cellsize = 10
 
     const cvs = document.getElementsByTagName("canvas")[0]
-    const scale = resize(cellsize, cvs)
+    scale = resize(cellsize, cvs)
 
-    const gl = cvs.getContext("webgl2")
+    gl = cvs.getContext("webgl2")
     gl.clearColor(0.0, 0.0, 0.0, 1.0)
     gl.clear(gl.COLOR_BUFFER_BIT)
 
+
     const sources = await getsources("pos.vert", "color.frag")
-    const program = construct_program(gl, sources)
+    program = construct_program(gl, sources)
     
-    const points = createpoints(scale)
+    points = createpoints(scale)
     
     const points_buff = create_attrbuffer(gl, program, "pos", 2, gl.FLOAT, gl.ARRAY_BUFFER)
     set_attrbuffer(gl, points_buff, points, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
 
+    border = (cellsize/20)
     const ulocation = gl.getUniformLocation(program, "cellsize")
-    gl.uniform1f(ulocation, cellsize-1)
+    gl.uniform1f(ulocation, cellsize - border)
 
     f = randfield(scale)
 
-    // const genes_buff = create_attrbuffer(gl, program, "gene", 2, gl.SHORT, gl.ARRAY_BUFFER)
-    // set_attrbuffer(gl, genes_buff, f, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
+    genes_buff = create_attrbuffer(gl, program, "vgene", 2, gl.SHORT, gl.ARRAY_BUFFER)
+    set_attrbuffer(gl, genes_buff, f, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
 
     gl.drawArrays(gl.POINTS, 0, points.length/2);
     gl.flush();
 
 }
  
-
-
-
 
 
 function resize(d, canvas) {
@@ -131,12 +130,24 @@ function wh2xy(wh, WH) {
 
 
 function create_attrbuffer(gl, program, varname, buff_elmlength, buff_elmtype, buff_target) {
+    const int_enums = [
+        gl.BYTE, gl.UNSIGNED_BYTE,
+        gl.SHORT, gl.UNSIGNED_SHORT,
+        gl.INT, gl.UNSIGNED_INT]
+    const float_enums = [
+        gl.FLOAT, gl.HALF_FLOAT]
+
     const buffer = gl.createBuffer()
     const location = gl.getAttribLocation(program, varname)
 
     gl.bindBuffer(buff_target, buffer)
+    console.log(location)
     gl.enableVertexAttribArray(location)
-    gl.vertexAttribPointer(location, buff_elmlength, buff_elmtype, false, 0, 0)
+    if (float_enums.includes(buff_elmtype)) {
+        gl.vertexAttribPointer(location, buff_elmlength, buff_elmtype, false, 0, 0)
+    } else if (int_enums.includes(buff_elmtype)){
+        gl.vertexAttribIPointer(location, buff_elmlength, buff_elmtype, 0, 0)
+    }
     gl.bindBuffer(buff_target, null)
 
     return buffer
