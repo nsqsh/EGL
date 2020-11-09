@@ -1,8 +1,3 @@
-// function randfield(scale) {
-//     const f = new Int16Array(scale.I*scale.J*2).fill(0x00)
-//     return f.map(elm => (Math.random()*513 - 1)|0)
-// }
-
 const BORN = 0
 const ALIVE = 1
 
@@ -29,13 +24,15 @@ function nextfield(field, scale) {
     let neighbors = []
     let child = []
     let neighborcount = 0
+    let alivenext = false
     for (let n = 0; n < N; n+=2) {
-        alive = (field[n] < 0)
+        alive = !(field[n] < 0)
         neighbors = getneighbors(field, n, I, J)
         neighborcount = neighbors.length
 
         if (alive) {
-            if (alivenext(field[n+ALIVE], neighborcount)) {
+            alivenext = isalivenext(field[n+ALIVE], neighborcount)
+            if (alivenext) {
                 nextfield[n] = field[n]
                 nextfield[n+1] = field[n+1]
             } else {
@@ -48,7 +45,8 @@ function nextfield(field, scale) {
                 nextfield[n+1] = -1
             } else {
                 child = breed(neighbors)
-                if (alivenext(child[BORN]), neighborcount) {
+                alivenext = isalivenext(child[BORN], neighborcount)
+                if (alivenext) {
                     nextfield[n+BORN] = child[BORN]
                     nextfield[n+ALIVE] = child[ALIVE]
                 } else {
@@ -65,19 +63,22 @@ function nextfield(field, scale) {
 }
 
 function getneighbors(field, n, I, J) {
-    const on_L_edge = ( (n/2)%J == 0 )
-    const on_R_edge = ( (n/2)%J == (J-1) )
-    const on_T_edge = ( ((n/2/J)|0) == 0 )
-    const on_B_edge = ( ((n/2/J)|0) == (I-1) )
-    
+   
+    const N = 2*I*J
     const L = -2; const R = 2
     const B = 2*J; const T = -2*J
+
+    const on_L_edge = ( (n/2)%J == 0 )
+    const on_R_edge = ( (n/2)%J == (J-1) )
+    const on_T_edge = (n+T < 0)
+    const on_B_edge = (N <= n+B)
+
 
     const neighbors = new Array(8).fill(null)
     let count = 0
     let m = 0
     for (let i of [T, 0, B]) {
-    for (let j of [L, 0, B]) {
+    for (let j of [L, 0, R]) {
         if (i==0 && j==0) continue
         if (on_T_edge && i==T) continue
         if (on_B_edge && i==B) continue
@@ -90,18 +91,17 @@ function getneighbors(field, n, I, J) {
         neighbors[count] = new Field([field[m], field[m+1]])
         count++
     }}
-
     return neighbors.filter(elm=>elm!=null)
 }
 
-function alivenext(genom, neighborcount) {
+function isalivenext(genom, neighborcount) {
+    if (genom < 0) return false
     const mask = (0b1 << neighborcount)
     return ( (genom & mask) != 0 )
 }
 
 function breed(neighbors) {
     const count = neighbors.length
-
     let mask = 0b0
     let parent = neighbors[0]
     const child = new Field([0x00, 0x00])
