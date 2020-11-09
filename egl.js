@@ -16,51 +16,26 @@ function initfield(scale, density) {
     return f
 }
 
-function nextfield(field, scale) {
+function calcnextfield(field, scale) {
     const N = scale.N
     const I = scale.I; const J = scale.J
     const nextfield = new Field(N)
-    let alive = false
     let neighbors = []
-    let child = []
-    let neighborcount = 0
-    let alivenext = false
+    let cell = new Field(2)
+    let nextcell = new Field(2)
+
     for (let n = 0; n < N; n+=2) {
-        alive = !(field[n] < 0)
+        cell = [field[n+BORN], field[n+ALIVE]]
+
         neighbors = getneighbors(field, n, I, J)
-        neighborcount = neighbors.length
+        nextcell = calcnextcell(cell, neighbors)
 
-        if (alive) {
-            alivenext = isalivenext(field[n+ALIVE], neighborcount)
-            if (alivenext) {
-                nextfield[n] = field[n]
-                nextfield[n+1] = field[n+1]
-            } else {
-                nextfield[n] = -1
-                nextfield[n+1] = -1
-            }
-        } else {
-            if (neighborcount == 0) {
-                nextfield[n] = -1
-                nextfield[n+1] = -1
-            } else {
-                child = breed(neighbors)
-                alivenext = isalivenext(child[BORN], neighborcount)
-                if (alivenext) {
-                    nextfield[n+BORN] = child[BORN]
-                    nextfield[n+ALIVE] = child[ALIVE]
-                } else {
-                    nextfield[n] = -1
-                    nextfield[n+1] = -1
-                }
-            }
-
-        }
-        
+        nextfield[n+BORN] = nextcell[BORN]
+        nextfield[n+ALIVE] = nextcell[ALIVE]
     }
-
     return nextfield
 }
+
 
 function getneighbors(field, n, I, J) {
    
@@ -68,8 +43,8 @@ function getneighbors(field, n, I, J) {
     const L = -2; const R = 2
     const B = 2*J; const T = -2*J
 
-    const on_L_edge = ( (n/2)%J == 0 )
-    const on_R_edge = ( (n/2)%J == (J-1) )
+    const on_L_edge = ( n%B == 0 )
+    const on_R_edge = ( n%B == (J-1) )
     const on_T_edge = (n+T < 0)
     const on_B_edge = (N <= n+B)
 
@@ -92,6 +67,30 @@ function getneighbors(field, n, I, J) {
         count++
     }}
     return neighbors.filter(elm=>elm!=null)
+}
+
+function calcnextcell(cell, neighbors) {
+    const neighborcount = neighbors.length
+
+    if (!(cell[0] < 0)) {
+        if (isalivenext(cell[ALIVE], neighborcount)) {
+            return cell
+        } else {
+            return new Field(2).fill(-1)
+        }
+    } else {
+        if (neighborcount == 0) {
+            return new Field(2).fill(-1)
+        } else {
+            const child = breed(neighbors)
+            if (isalivenext(child[BORN], neighborcount)) {
+                return child
+            } else {
+                return new Field(2).fill(-1)
+            }
+        }
+
+    }
 }
 
 function isalivenext(genom, neighborcount) {
