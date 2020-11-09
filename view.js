@@ -1,4 +1,4 @@
-const cellsize = 10
+const cellsize = 8
 
 class Scale {
     constructor(d, canvas) {
@@ -17,7 +17,7 @@ window.onload = main
 
 // debug
 window.onclick = function(){
-    f = nextfield(f, scale)
+    f = calcnextfield(f, scale)
     set_attrbuffer(gl, genes_buff, f, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
     gl.drawArrays(gl.POINTS, 0, points.length/2);
 }
@@ -44,7 +44,7 @@ async function main() {
 
     border = Math.min(cellsize/50, 3)
     const ulocation = gl.getUniformLocation(program, "cellsize")
-    gl.uniform1f(ulocation, cellsize - border)
+    gl.uniform1f(ulocation, cellsize-border)
 
     genes_buff = create_attrbuffer(gl, program, "vgene", 2, gl.SHORT, gl.ARRAY_BUFFER)
     set_attrbuffer(gl, genes_buff, f, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
