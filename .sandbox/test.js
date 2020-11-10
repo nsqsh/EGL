@@ -1,49 +1,68 @@
+"use strinct"
+
 const I = 2160
 const J = 4096
 const N = I*J
-const cellmax = 2**31
+const cellmax = 2**18
 const F = Int32Array
 
-const loopcount = 1
 
-const f = new F(N).fill(0).map(elm=>Math.random()*cellmax|0)
-const f2 = new Array(J).fill([]).map(
-    row => new F(I).fill(-1).map(
-        cell => (cellmax*Math.random()|0)
-    )
-)
+const f = new F(N).fill(0).map(()=>{
+    if (Math.random() < 0.99) {
+        return (Math.random()*cellmax)|0
+    } else {
+        return -1
+    }
+})
 
 function createbuff(field) {
-    const buff = new F(N*9)
-    for (let i = 0; i < I; i++) {
+    const N9 = N*9
+    const buff = new F(N9)
+    
+    const T = -1; const B = +1
+    const L = -I; const R = I
 
-        let topedge = (i===0)
-        let bottomedge = (i===I-1)
-        for (let j = 0; j < J; j++) {
-            let leftedge = (j===0)
-            let rightedge = (j===J-1)            
+    let i, j
+    let edgeL, edgeR, edgeT, edgeB
+    
+    for (let n = 0; n < N; n+=9) {
+        i = n%I; j = (n/I)|0
+        edgeL = j===0; edgeR = j===J-1
+        edgeT = i===0; edgeB = i===I-1
 
-            let n = (i*J + j)
+        buff[n  ] = edgeL||edgeT ? -1 : field[n+L+T]
+        buff[n+1] = edgeL        ? -1 : field[n+L  ]
+        buff[n+2] = edgeL||edgeB ? -1 : field[n+L+B]
+        buff[n+3] =        edgeT ? -1 : field[n  +T]
+        buff[n+4] =                     field[n    ]
+        buff[n+5] =        edgeB ? -1 : field[n  +B]
+        buff[n+6] = edgeR||edgeT ? -1 : field[n+R+T]
+        buff[n+7] = edgeR        ? -1 : field[n+R  ]
+        buff[n+8] = edgeR||edgeB ? -1 : field[n+R+B]
 
-            buff[n] = (leftedge||topedge) ? -1 : field[j-1][i-1]
-            buff[n+1] = (leftedge) ? -1 : field[j-1][i]
-            buff[n+2] = (leftedge||bottomedge) ? -1 : field[j-1][i+1]
-            buff[n+3] = (topedge) ? -1 : field[j][i-1]
-            buff[n+4] = field[j][i]
-            buff[n+5] = (bottomedge) ? -1 : field[j][i+1]
-            buff[n+6] = (rightedge||topedge) ? -1 : field[j+1][i-1]
-            buff[n+7] = (rightedge) ? -1 : field[j+1][i]
-            buff[n+8] = (rightedge||bottomedge) ? -1 : field[j+1][i+1]
-
-            n += 9
-        }
     }
     return buff
 }
 
+const timestamp = []
+const bstart = performance.now()
+while (performance.now() - bstart < 5000) {
+    const start = performance.now()
+    const buff = createbuff(f)
+    const end = performance.now()
+    timestamp.push(end-start)
+}
+const mean = timestamp.reduce((sum, elm)=>sum+=elm)/timestamp.length
+const median = timestamp[(timestamp.length/2)|0]
+const max = timestamp.reduce((max, elm)=>Math.max(max, elm))
+const min = timestamp.reduce((min, elm)=>Math.min(min, elm))
 
-bstart = performance.now()
-buff = createbuff(f2)
-bend = performance.now()
+const mb = `
+ループ回数：${timestamp.length}
+最大値：${max} ms
+最小値：${min} ms
+平均値：${mean} ms
+中央値：${median} ms
+`
 
-console.log(bend-bstart)
+console.log(mb)
