@@ -23,11 +23,11 @@ class Scale {
 window.onload = main
 
 // debug
-// window.onclick = function(){
-//     f = calcnextfield(f, scale)
-//     set_attrbuffer(gl, genes_buff, f, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
-//     gl.drawArrays(gl.POINTS, 0, points.length/2);
-// }
+window.onclick = function(){
+    f = calcnextfield(f, scale)
+    set_attrbuffer(gl, genes_buff, f, gl.STATIC_DRAW, gl.ARRAY_BUFFER)
+    gl.drawArrays(gl.POINTS, 0, points.length/2);
+}
 
 async function main() {
 
