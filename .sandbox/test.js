@@ -4,7 +4,7 @@ const I = 2160
 const J = 4096
 const N = I*J
 const cellmax = 2**18
-const F = Int32Array
+const F = Float32Array
 
 
 const f = new F(N).fill(0).map(()=>{
