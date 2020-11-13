@@ -3,7 +3,7 @@
 #define GENELEN (18)
 #define GENE_HALFLEN (GENELEN/2)
 #define ALIVE (0)
-#define BORN = GENE_HARFLEN
+#define BORN GENE_HARFLEN
 #define MAX_RGB_ELM float(GENELEN/3)
 
 uniform mediump float cellsize;
