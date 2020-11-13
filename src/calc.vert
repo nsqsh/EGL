@@ -112,7 +112,7 @@ highp int breed(
 
 
 void main() {
-
+    highp int randstate = time + gl_VertexID;
     ivec2 ij = ivec2(n%I, n/I);
     vec2 ij_f = vec2(float(i), float(j));
 
@@ -149,9 +149,8 @@ void main() {
     } else if (neighbor==0) {
         nextcell = DEAD;
     } else {
-        highp int randstate = time + gl_VertexID;
         highp int child = breed(upper, middle, lower, randstate);
-        lowp int alivenext = isalivenext(child, 0, neighbor);
+        alivenext = isalivenext(child, 0, neighbor);
         nextcell = alivenext*child + not(alivenext)*DEAD;
     }
 
