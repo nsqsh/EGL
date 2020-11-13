@@ -1,5 +1,3 @@
-var field
-
 const GENELEN = 18
 const ALIVE = 0
 const BORN = GENELEN/2

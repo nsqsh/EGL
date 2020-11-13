@@ -1,9 +1,8 @@
 #version 300 es
-precision mediump float;
 
-in vec4 vcolor;
-out vec4 fcolor;
+in mediump vec4 genecolor;
+out mediump vec4 cellcolor;
 
 void main() {
-    fcolor = vcolor;
+    cellcolor = genecolor;
 }

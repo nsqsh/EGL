@@ -1,32 +1,30 @@
 #version 300 es
 
-#define STATE_SIZE (2)
-#define GENE_SIZE (9)
-#define MAX_RGB_ELM float((GENE_SIZE/3)*STATE_SIZE)
-#define isalive(gene) (gene[0] < 0)
+#define GENELEN (18)
+#define GENE_HALFLEN (GENELEN/2)
+#define ALIVE (0)
+#define BORN = GENE_HARFLEN
+#define MAX_RGB_ELM float(GENELEN/3)
 
-uniform float cellsize;
-in vec2 pos;
-in ivec2 vgene;
-out vec4 vcolor;
+uniform mediump float cellsize;
+in mediump vec2 pos;
+in highp int gene;
+out mediump vec4 genecolor;
 
-vec4 gene2color(const in ivec2 gene) {
-    int alive = int(!isalive(gene));
+vec4 gene2color(const in int gene) {
+    lowp int alive = int(!(gene < 0));
 
-    int codon = 0;
-    int mask = 0;
-    int color = 0;
-    ivec3 rgb = ivec3(0, 0, 0);
-    
-    for (int s = 0; s < STATE_SIZE; s++) {
-    for (int g = 0; g < GENE_SIZE; g++) {
-        mask = 1 << g;
-        codon = (gene[s] & mask) >> g;
-        
-        color = g/3;
+    lowp int flag = 0;
+    highp int mask = 0;
+    lowp int rgb_index = 0;
+    lowp ivec3 rgb = ivec3(0, 0, 0);
 
-        rgb[color] += alive*codon;
-    }}
+    for (int bit = 0; bit < GENELEN; bit++) {
+        mask = 1 << bit;
+        flag = ((gene & mask) >> bit);
+        rgb_index = (bit%GENE_HALFLEN)/3;
+        rgb[rgb_index] += alive*flag;
+    }
 
     vec4 rgba = vec4(
         float(rgb.r)/MAX_RGB_ELM,
@@ -38,7 +36,7 @@ vec4 gene2color(const in ivec2 gene) {
 }
 
 void main() {
-    vcolor = gene2color(vgene);
+    genecolor = gene2color(gene);
     gl_PointSize = cellsize;
     gl_Position = vec4(pos, 0.0, 1.0);
 }
