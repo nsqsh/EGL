@@ -77,18 +77,27 @@ async function initialize() {
             // セル情報バッファ（描画シェーダ）のセットアップ
             thisbuffer.gene  = create_glbuffer(gl, shader.draw, "gene", gl.ARRAY_BUFFER, 1, gl.INT)
             set_glvalue(gl, thisbuffer.gene, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW, field)
+
             gl.drawArrays(gl.POINTS, 0, points.length/2)
 
         } else if (i===1) {
-            // IJのセットアップ
-            const ulocation = gl.getUniformLocation(shader.draw, "IJ")
-            gl.uniform1f(ulocation, scale.IJ)
+            // テクスチャのセットアップ
+            const texture = gl.createTexture()
+            gl.activeTexture(gl.TEXTURE0)
+            gl.bindTexture(gl.TEXTURE_2D, texture)
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32I, scale.I, scale.J, 0, gl.RED_INTEGER, gl.INT, null)
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+            gl.bindTexture(gl.TEXTURE_2D, null)
 
             // セル情報バッファ（マッピングシェーダ）のセットアップ
             thisbuffer.gene  = create_glbuffer(gl, shader.draw, "gene", gl.ARRAY_BUFFER, 1, gl.INT)
             set_glvalue(gl, thisbuffer.gene, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW, field)
+
             gl.drawArrays(gl.POINTS, 0, points.length/2)
 
+        } else if (i===2) {
+            
         }
 
         buffer[name] = thisbuffer

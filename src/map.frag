@@ -1,8 +1,8 @@
 #version 300 es
 
-in mediump vec4 mapped;
-out mediump vec4 recordcolor;
+flat in highp int record;
+out highp int texel;
 
 void main() {
-    recordcolor = mapped;
+    texel = record;
 }
