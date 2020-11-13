@@ -57,26 +57,39 @@ async function initialize() {
     .forEach( (code, i) => {
         
         // 暫定
-        if (i!==0) return null
+        if (i===2) return null
 
         const name = shadername[i]
         const thisbuffer = {}
         shader[name] = create_glprogram(gl, code)
         gl.useProgram(shader.draw);
 
-        // cellsizeのセットアップ
-        border = Math.min(cellsize/50, 3)
-        ulocation = gl.getUniformLocation(shader.draw, "cellsize")
-        gl.uniform1f(ulocation, cellsize-border)
+        if (i===0) {
+            // cellsizeのセットアップ
+            const border = Math.min(cellsize/50, 3)
+            const ulocation = gl.getUniformLocation(shader.draw, "cellsize")
+            gl.uniform1f(ulocation, cellsize-border)
 
-        // セル位置バッファのセットアップ
-        thisbuffer.pos = create_glbuffer(gl, shader.draw, "pos", gl.ARRAY_BUFFER, 2, gl.FLOAT)
-        set_glvalue(gl, thisbuffer.pos, gl.ARRAY_BUFFER, gl.STATIC_DRAW, points)
-        
-        // セル情報バッファのセットアップ
-        thisbuffer.gene  = create_glbuffer(gl, shader.draw, "gene", gl.ARRAY_BUFFER, 1, gl.INT)
-        set_glvalue(gl, thisbuffer.gene, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW, field)
-        gl.drawArrays(gl.POINTS, 0, points.length/2);
+            // セル位置バッファのセットアップ
+            thisbuffer.pos = create_glbuffer(gl, shader.draw, "pos", gl.ARRAY_BUFFER, 2, gl.FLOAT)
+            set_glvalue(gl, thisbuffer.pos, gl.ARRAY_BUFFER, gl.STATIC_DRAW, points)
+            
+            // セル情報バッファ（描画シェーダ）のセットアップ
+            thisbuffer.gene  = create_glbuffer(gl, shader.draw, "gene", gl.ARRAY_BUFFER, 1, gl.INT)
+            set_glvalue(gl, thisbuffer.gene, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW, field)
+            gl.drawArrays(gl.POINTS, 0, points.length/2)
+
+        } else if (i===1) {
+            // IJのセットアップ
+            const ulocation = gl.getUniformLocation(shader.draw, "IJ")
+            gl.uniform1f(ulocation, scale.IJ)
+
+            // セル情報バッファ（マッピングシェーダ）のセットアップ
+            thisbuffer.gene  = create_glbuffer(gl, shader.draw, "gene", gl.ARRAY_BUFFER, 1, gl.INT)
+            set_glvalue(gl, thisbuffer.gene, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW, field)
+            gl.drawArrays(gl.POINTS, 0, points.length/2)
+
+        }
 
         buffer[name] = thisbuffer
         
