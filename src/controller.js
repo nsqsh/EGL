@@ -40,7 +40,7 @@ async function initialize() {
         gl = canvas.getContext("webgl2")
         gl.clearColor(0.0, 0.0, 0.0, 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT)
-        
+
         points = createvertices(scale)
         field = initfield(scale, 0.3)
     })
@@ -64,19 +64,22 @@ async function initialize() {
         shader[name] = create_glprogram(gl, code)
         gl.useProgram(shader.draw);
 
+        // cellsizeのセットアップ
         border = Math.min(cellsize/50, 3)
         ulocation = gl.getUniformLocation(shader.draw, "cellsize")
         gl.uniform1f(ulocation, cellsize-border)
 
+        // セル位置バッファのセットアップ
         thisbuffer.pos = create_glbuffer(gl, shader.draw, "pos", gl.ARRAY_BUFFER, 2, gl.FLOAT)
         set_glvalue(gl, thisbuffer.pos, gl.ARRAY_BUFFER, gl.STATIC_DRAW, points)
         
+        // セル情報バッファのセットアップ
         thisbuffer.gene  = create_glbuffer(gl, shader.draw, "gene", gl.ARRAY_BUFFER, 1, gl.INT)
         set_glvalue(gl, thisbuffer.gene, gl.ARRAY_BUFFER, gl.DYNAMIC_DRAW, field)
+        gl.drawArrays(gl.POINTS, 0, points.length/2);
 
         buffer[name] = thisbuffer
-
-        gl.drawArrays(gl.POINTS, 0, points.length/2);
+        
     })
         
 }
