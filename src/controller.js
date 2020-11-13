@@ -34,10 +34,13 @@ initialize()
 
 
 async function initialize() {
-    const glpromise = get_glcontext()
-    .then( result => {
-        gl = result
-        scale = resize(cellsize, gl.canvas)
+    const glpromise = getcanvas()
+    .then( canvas => {
+        scale = resize(cellsize, canvas)
+        gl = canvas.getContext("webgl2")
+        gl.clearColor(0.0, 0.0, 0.0, 1.0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+        
         points = createvertices(scale)
         field = initfield(scale, 0.3)
     })
@@ -78,15 +81,11 @@ async function initialize() {
         
 }
 
-async function get_glcontext() {
+async function getcanvas() {
     return new Promise(resolve=>{
         window.onload = function(){
             const cvs = document.getElementsByTagName("canvas")[0]
-            const gl = cvs.getContext("webgl2")
-            gl.clearColor(0.0, 0.0, 0.0, 1.0)
-            gl.clear(gl.COLOR_BUFFER_BIT)
-
-            resolve(gl)
+            resolve(cvs)
         }
     })
 }
