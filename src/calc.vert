@@ -60,7 +60,7 @@ highp int nextrand(
     return state;
 }
 
-highp int choiceparent(
+highp int chooseparent(
     in highp ivec3 upper,
     in highp ivec3 middle,
     in highp ivec3 lower,
@@ -100,7 +100,7 @@ highp int breed(
         while (parent != -1) {
             rand = nextrand(rand);
             rand8 = (rand & 7);
-            parent = choiceparent(upper, middle, lower, rand8);
+            parent = chooseparent(upper, middle, lower, rand8);
         }
 
         mask = (1 << bit);
